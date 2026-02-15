@@ -52,9 +52,14 @@ class WatchlistManager {
         const saved = localStorage.getItem('kflixWatchlist');
         this.watchlist = saved ? JSON.parse(saved) : [];
         
+        console.log('Watchlist loaded:', this.watchlist.length, 'items');
+        
         if (this.watchlist.length === 0) {
+            console.log('Watchlist is empty, showing empty state');
             this.showEmptyState();
+            this.hideSkeleton();
         } else {
+            console.log('Watchlist has items, displaying...');
             this.displayWatchlist();
         }
     }
@@ -108,6 +113,8 @@ class WatchlistManager {
                 const start = (this.currentPage - 1) * this.itemsPerPage;
                 const end = start + this.itemsPerPage;
                 const paginatedMovies = sorted.slice(start, end);
+                
+                console.log(`Displaying page ${this.currentPage}: ${paginatedMovies.length} movies`);
                 
                 const fragment = document.createDocumentFragment();
                 paginatedMovies.forEach(movie => {
@@ -224,6 +231,8 @@ class WatchlistManager {
         this.watchlist = this.watchlist.filter(m => m.id != movieId);
         localStorage.setItem('kflixWatchlist', JSON.stringify(this.watchlist));
         
+        console.log('Removed movie, new count:', this.watchlist.length);
+        
         if (this.watchlist.length === 0) {
             this.showEmptyState();
         } else {
@@ -267,6 +276,8 @@ class WatchlistManager {
 
     initLazyLoading() {
         const lazyImages = document.querySelectorAll('.lazy-image:not(.loaded)');
+        
+        if (lazyImages.length === 0) return;
         
         if ('IntersectionObserver' in window) {
             const imageObserver = new IntersectionObserver((entries, observer) => {
@@ -396,16 +407,23 @@ class WatchlistManager {
     }
 
     showSkeleton() {
-        this.skeletonLoader.style.display = 'grid';
-        this.watchlistGrid.style.display = 'none';
+        if (this.watchlist.length > 0) {
+            this.skeletonLoader.style.display = 'grid';
+            this.watchlistGrid.style.display = 'none';
+        } else {
+            this.skeletonLoader.style.display = 'none';
+        }
     }
 
     hideSkeleton() {
         this.skeletonLoader.style.display = 'none';
-        this.watchlistGrid.style.display = 'grid';
+        if (this.watchlist.length > 0) {
+            this.watchlistGrid.style.display = 'grid';
+        }
     }
 
     showEmptyState() {
+        console.log('Showing empty state');
         this.emptyWatchlist.style.display = 'block';
         this.watchlistGrid.style.display = 'none';
         this.skeletonLoader.style.display = 'none';
@@ -424,6 +442,7 @@ class WatchlistManager {
     clearAllWatchlist() {
         this.watchlist = [];
         localStorage.removeItem('kflixWatchlist');
+        console.log('Watchlist cleared');
         this.showEmptyState();
         this.showToast('🗑️ Watchlist cleared');
         this.closeConfirmModal();
@@ -546,5 +565,6 @@ class WatchlistManager {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded, initializing WatchlistManager');
     window.watchlistManager = new WatchlistManager();
 });
