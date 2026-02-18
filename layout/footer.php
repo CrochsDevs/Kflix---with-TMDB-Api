@@ -29,7 +29,7 @@
         <div class="service-code">
             <span>Service Code</span>
         </div>
-        <p class="copyright">&copy; 2024 KFLIX, Inc.</p>
+        <p class="copyright">&copy; 2026 KFLIX - CrochsDevs, Inc.</p>
     </div>
 </footer>
 
