@@ -1,12 +1,16 @@
 <?php
-    // play.php
+    // play.php - NOW SUPPORTS BOTH MOVIES AND TV SHOWS
     require_once 'vendor/autoload.php';
     use GuzzleHttp\Client;
 
     require_once 'config/db.php';
     require_once 'models/Watchlist.php';
 
+    // Get parameters
     $movie_id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
+    $type = isset($_GET['type']) ? $_GET['type'] : 'movie'; // 'movie' or 'tv'
+    $season = isset($_GET['season']) ? (int) $_GET['season'] : 1;
+    $episode = isset($_GET['episode']) ? (int) $_GET['episode'] : 1;
     $server = isset($_GET['server']) ? (int) $_GET['server'] : 1;
 
     if (! $movie_id) {
@@ -15,37 +19,52 @@
     }
 
     $client = new Client();
-    $movie = null;
+    $content = null; // Will hold movie or TV show data
     $recommendations = [];
     $videos = [];
+    $seasons = []; // For TV shows only
     $api_key = '6b41a1cc64742876ef62e17108c18cc3';
 
     try {
-        // Get movie details with videos, credits, and recommendations
-        $response = $client->request('GET', "https://api.themoviedb.org/3/movie/{$movie_id}?api_key={$api_key}&language=en-US&append_to_response=videos,credits,recommendations,similar", [
-            'timeout' => 10,
-        ]);
-
-        $movie = json_decode($response->getBody(), true);
+        // Get content details based on type
+        if ($type === 'tv') {
+            // TV Show details with videos, credits, recommendations
+            $response = $client->request('GET', "https://api.themoviedb.org/3/tv/{$movie_id}?api_key={$api_key}&language=en-US&append_to_response=videos,credits,recommendations,similar", [
+                'timeout' => 10,
+            ]);
+            $content = json_decode($response->getBody(), true);
+            $seasons = $content['seasons'] ?? [];
+        } else {
+            // Movie details with videos, credits, recommendations
+            $response = $client->request('GET', "https://api.themoviedb.org/3/movie/{$movie_id}?api_key={$api_key}&language=en-US&append_to_response=videos,credits,recommendations,similar", [
+                'timeout' => 10,
+            ]);
+            $content = json_decode($response->getBody(), true);
+        }
 
         // Get recommendations
-        if (isset($movie['recommendations']['results']) && ! empty($movie['recommendations']['results'])) {
-            $recommendations = array_slice($movie['recommendations']['results'], 0, 12);
-        } elseif (isset($movie['similar']['results']) && ! empty($movie['similar']['results'])) {
-            $recommendations = array_slice($movie['similar']['results'], 0, 12);
+        if (isset($content['recommendations']['results']) && ! empty($content['recommendations']['results'])) {
+            $recommendations = array_slice($content['recommendations']['results'], 0, 12);
+        } elseif (isset($content['similar']['results']) && ! empty($content['similar']['results'])) {
+            $recommendations = array_slice($content['similar']['results'], 0, 12);
         }
 
         // Get videos (trailers, teasers, etc.)
-        if (isset($movie['videos']['results'])) {
-            $videos = $movie['videos']['results'];
+        if (isset($content['videos']['results'])) {
+            $videos = $content['videos']['results'];
         }
 
     } catch (\Exception $e) {
         error_log('TMDB API Error: ' . $e->getMessage());
     }
 
-    if (! $movie) {
-        header('Location: index.php');
+    if (! $content) {
+        // Redirect based on type
+        if ($type === 'tv') {
+            header('Location: tvshow.php');
+        } else {
+            header('Location: index.php');
+        }
         exit;
     }
 
@@ -66,20 +85,40 @@
         $trailer = $videos[0];
     }
 
-    // WORKING SERVERS LANG
-    $servers = [
-        [
-            'name' => 'Server 1',
-            'url' => 'https://moviesapi.club/movie/' . $movie_id,
-            'status' => 'active'
-        ],
-        [
-            'name' => 'Server 2',
-            'url' => 'https://www.2embed.cc/embed/' . $movie_id,
-            'status' => 'active'
-        ]
-    ];
+    // WORKING SERVERS - Support both movies and TV shows
+    if ($type === 'tv') {
+        // TV Show servers with season & episode
+        $servers = [
+            [
+                'name' => 'Server 1',
+                'url' => 'https://moviesapi.club/tv/' . $movie_id . '-' . $season . '-' . $episode,
+                'status' => 'active'
+            ],
+            [
+                'name' => 'Server 2',
+                'url' => 'https://www.2embed.cc/embedtv/' . $movie_id . '&s=' . $season . '&e=' . $episode,
+                'status' => 'active'
+            ]
+        ];
+    } else {
+        // Movie servers
+        $servers = [
+            [
+                'name' => 'Server 1',
+                'url' => 'https://moviesapi.club/movie/' . $movie_id,
+                'status' => 'active'
+            ],
+            [
+                'name' => 'Server 2',
+                'url' => 'https://www.2embed.cc/embed/' . $movie_id,
+                'status' => 'active'
+            ]
+        ];
+    }
 
+    // Set page title
+    $title = $type === 'tv' ? $content['name'] : $content['title'];
+    $page_title = htmlspecialchars($title) . ' - Watch Free';
     include 'layout/header.php';
 ?>
 
@@ -95,7 +134,7 @@
         --border-color: #333;
         --shadow: 0 8px 20px rgba(0,0,0,0.5);
         --success: #10b981;
-        --header-height: 70px; /* Fixed header height */
+        --header-height: 70px;
     }
 
     * {
@@ -114,7 +153,6 @@
         line-height: 1.6;
     }
 
-    /* Fix for fixed header - add padding to body */
     body {
         padding-top: var(--header-height);
     }
@@ -129,7 +167,75 @@
         width: 100%;
     }
 
-    /* Back Button - Improved with better visibility */
+    /* Search Bar */
+    .search-section {
+        margin-bottom: 25px;
+        width: 100%;
+    }
+
+    .search-form {
+        display: flex;
+        align-items: center;
+        background: #1a1a1a;
+        border: 1px solid var(--border-color);
+        border-radius: 40px;
+        padding: 5px 5px 5px 20px;
+        max-width: 600px;
+        margin: 0 auto;
+        transition: all 0.3s ease;
+    }
+
+    .search-form:hover,
+    .search-form:focus-within {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 2px rgba(229, 9, 20, 0.2);
+    }
+
+    .search-form i {
+        color: var(--text-dim);
+        font-size: 1rem;
+    }
+
+    .search-input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 12px 15px;
+        color: var(--text-main);
+        font-size: 1rem;
+        outline: none;
+    }
+
+    .search-input::placeholder {
+        color: var(--text-dim);
+        font-style: italic;
+    }
+
+    .search-btn {
+        background: var(--primary);
+        border: none;
+        color: white;
+        padding: 10px 25px;
+        border-radius: 40px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .search-btn:hover {
+        background: var(--primary-dark);
+        transform: scale(1.02);
+    }
+
+    .search-btn i {
+        color: white;
+        font-size: 0.9rem;
+    }
+
+    /* Back Button */
     .back-link {
         display: inline-flex;
         align-items: center;
@@ -179,7 +285,7 @@
 
     .video-wrapper {
         position: relative;
-        padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        padding-top: 56.25%;
         background: #000;
     }
 
@@ -192,7 +298,81 @@
         border: none;
     }
 
-    /* Server Controls - NASA IBABA NA NG VIDEO */
+    /* Episode Selector - Only visible for TV shows */
+    .episode-selector {
+        background: #1a1a1a;
+        padding: 15px 20px;
+        display: <?php echo $type === 'tv' ? 'flex' : 'none'; ?>;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .episode-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .episode-label i {
+        color: var(--primary);
+        font-size: 1rem;
+    }
+
+    .episode-controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+
+    .episode-select {
+        background: #2a2a2a;
+        border: 1px solid #444;
+        color: var(--text-main);
+        padding: 8px 15px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        outline: none;
+        min-width: 150px;
+    }
+
+    .episode-select:hover {
+        border-color: var(--primary);
+    }
+
+    .episode-btn {
+        background: var(--primary);
+        border: none;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .episode-btn:hover {
+        background: var(--primary-dark);
+        transform: scale(1.02);
+    }
+
+    .episode-btn i {
+        font-size: 0.85rem;
+    }
+
+    /* Server Controls */
     .server-controls {
         background: #1a1a1a;
         padding: 15px 20px;
@@ -564,7 +744,7 @@
         color: var(--primary);
     }
 
-    /* ========== RECOMMENDATIONS SECTION ========== */
+    /* Recommendations Section */
     .recommendations-header {
         margin: 40px 0 25px;
         width: 100%;
@@ -633,7 +813,6 @@
         transform: scale(1.1);
     }
 
-    /* PLAY ICON OVERLAY */
     .play-overlay {
         position: absolute;
         top: 0;
@@ -701,8 +880,7 @@
         font-size: 0.85rem;
     }
 
-    /* ========== RESPONSIVE BREAKPOINTS ========== */
-
+    /* Responsive */
     @media (max-width: 1200px) {
         .rec-grid {
             grid-template-columns: repeat(5, 1fr);
@@ -765,6 +943,14 @@
         .recommendations-header h2 {
             font-size: 1.5rem;
         }
+        
+        .episode-controls {
+            width: 100%;
+        }
+        
+        .episode-select {
+            flex: 1;
+        }
     }
 
     @media (max-width: 576px) {
@@ -812,6 +998,32 @@
             padding: 8px 16px;
             font-size: 0.9rem;
         }
+        
+        .search-btn span {
+            display: none;
+        }
+        
+        .search-btn {
+            padding: 10px 15px;
+        }
+        
+        .episode-selector {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .episode-controls {
+            flex-direction: column;
+        }
+        
+        .episode-select {
+            width: 100%;
+        }
+        
+        .episode-btn {
+            width: 100%;
+            justify-content: center;
+        }
     }
 
     @media (max-width: 375px) {
@@ -833,7 +1045,6 @@
         }
     }
 
-    /* Loading Animation */
     @keyframes pulse {
         0%, 100% { opacity: 1; }
         50% { opacity: 0.5; }
@@ -854,7 +1065,6 @@
         }
     }
 
-    /* FOOTER FIX */
     footer, .footer {
         margin-top: auto;
         padding: 30px 0 20px;
@@ -871,7 +1081,7 @@
         <div class="modal-header">
             <h3>
                 <i class="fab fa-youtube"></i>
-                <?php echo $trailer ? $trailer['type'] : 'Trailer'; ?> - <?php echo htmlspecialchars($movie['title']); ?>
+                <?php echo $trailer ? $trailer['type'] : 'Trailer'; ?> - <?php echo htmlspecialchars($title); ?>
             </h3>
             <button class="close-modal" onclick="closeTrailer()">
                 <i class="fas fa-times"></i>
@@ -888,9 +1098,18 @@
 </div>
 
 <div class="play-page-container">
-    <!-- Back Button - Fixed position with proper spacing -->
-    <a href="index.php" class="back-link">
-        <i class="fas fa-arrow-left"></i> Back to Home
+    <!-- Search Bar - FIXED: Now redirects to the correct page -->
+    <div class="search-section">
+        <form action="<?php echo $type === 'tv' ? 'tvshow.php' : 'movie.php'; ?>" method="GET" class="search-form">
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" class="search-input" placeholder="Search <?php echo $type === 'tv' ? 'TV shows' : 'movies'; ?>..." autocomplete="off">
+            <button type="submit" class="search-btn"><i class="fas fa-search"></i> <span>Search</span></button>
+        </form>
+    </div>
+
+    <!-- Back Button -->
+    <a href="<?php echo $type === 'tv' ? 'tvshow.php' : 'movie.php'; ?>" class="back-link">
+        <i class="fas fa-arrow-left"></i> Back to <?php echo $type === 'tv' ? 'TV Shows' : 'Movies'; ?>
     </a>
 
     <!-- Main Player Section -->
@@ -903,11 +1122,43 @@
                     loading="lazy"></iframe>
         </div>
 
+        <!-- Episode Selector - Only for TV shows -->
+        <?php if ($type === 'tv'): ?>
+        <div class="episode-selector">
+            <div class="episode-label">
+                <i class="fas fa-list"></i>
+                <span>EPISODE:</span>
+            </div>
+            <div class="episode-controls">
+                <select id="seasonSelect" class="episode-select">
+                    <?php foreach ($seasons as $s): 
+                        if ($s['season_number'] > 0): ?>
+                        <option value="<?php echo $s['season_number']; ?>" <?php echo $season == $s['season_number'] ? 'selected' : ''; ?>>
+                            Season <?php echo $s['season_number']; ?> (<?php echo $s['episode_count']; ?> eps)
+                        </option>
+                    <?php endif; endforeach; ?>
+                </select>
+                
+                <select id="episodeSelect" class="episode-select">
+                    <?php for ($e = 1; $e <= 20; $e++): ?>
+                        <option value="<?php echo $e; ?>" <?php echo $episode == $e ? 'selected' : ''; ?>>
+                            Episode <?php echo $e; ?>
+                        </option>
+                    <?php endfor; ?>
+                </select>
+                
+                <button class="episode-btn" onclick="changeEpisode()">
+                    <i class="fas fa-play"></i> Go to Episode
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- SERVER BUTTONS -->
         <div class="server-controls">
             <div class="server-label">
                 <i class="fas fa-server"></i>
-                <span>SELECT SERVER:</span>
+                <span>SERVER:</span>
             </div>
             <div class="server-buttons">
                 <?php foreach ($servers as $index => $srv): ?>
@@ -939,17 +1190,17 @@
         </div>
     </div>
 
-    <!-- Movie Details Section -->
+    <!-- Content Details Section -->
     <div class="content-info">
         <div class="info-poster">
-            <img src="https://image.tmdb.org/t/p/w500<?php echo $movie['poster_path']; ?>"
-                 alt="<?php echo htmlspecialchars($movie['title']); ?>"
+            <img src="https://image.tmdb.org/t/p/w500<?php echo $content['poster_path']; ?>"
+                 alt="<?php echo htmlspecialchars($title); ?>"
                  loading="lazy">
         </div>
 
         <div class="info-details">
             <div class="movie-title-row">
-                <h1><?php echo htmlspecialchars($movie['title']); ?></h1>
+                <h1><?php echo htmlspecialchars($title); ?></h1>
                 <button class="watchlist-btn <?php echo $inWatchlist ? 'in-list' : ''; ?>"
                         id="watchlistBtn"
                         onclick="toggleWatchlist(<?php echo $movie_id; ?>)">
@@ -960,25 +1211,32 @@
 
             <div class="meta-data">
                 <span class="rating-badge">
-                    <i class="fas fa-star"></i> <?php echo number_format($movie['vote_average'], 1); ?>/10
+                    <i class="fas fa-star"></i> <?php echo number_format($content['vote_average'], 1); ?>/10
                 </span>
-                <span><i class="far fa-calendar-alt"></i> <?php echo date('Y', strtotime($movie['release_date'])); ?></span>
-                <span><i class="far fa-clock"></i> <?php echo $movie['runtime']; ?> min</span>
+                
+                <?php if ($type === 'tv'): ?>
+                    <span><i class="far fa-calendar-alt"></i> <?php echo substr($content['first_air_date'], 0, 4); ?></span>
+                    <span><i class="fas fa-calendar"></i> <?php echo $content['number_of_seasons']; ?> Seasons</span>
+                <?php else: ?>
+                    <span><i class="far fa-calendar-alt"></i> <?php echo date('Y', strtotime($content['release_date'])); ?></span>
+                    <span><i class="far fa-clock"></i> <?php echo $content['runtime']; ?> min</span>
+                <?php endif; ?>
+                
                 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                    <?php foreach (array_slice($movie['genres'], 0, 3) as $genre): ?>
+                    <?php foreach (array_slice($content['genres'], 0, 3) as $genre): ?>
                         <span class="genre-pill"><?php echo htmlspecialchars($genre['name']); ?></span>
                     <?php endforeach; ?>
                 </div>
             </div>
 
-            <p class="overview-text"><?php echo htmlspecialchars($movie['overview']); ?></p>
+            <p class="overview-text"><?php echo htmlspecialchars($content['overview']); ?></p>
 
-            <?php if (isset($movie['credits']['cast']) && ! empty($movie['credits']['cast'])): ?>
+            <?php if (isset($content['credits']['cast']) && ! empty($content['credits']['cast'])): ?>
             <div class="cast-info">
                 <strong><i class="fas fa-users"></i> Cast:</strong>
                 <span class="cast-names">
                     <?php
-                        $cast = array_slice($movie['credits']['cast'], 0, 8);
+                        $cast = array_slice($content['credits']['cast'], 0, 8);
                         $castNames = array_map(function ($c) {
                             return '<span>' . htmlspecialchars($c['name']) . '</span>';
                         }, $cast);
@@ -987,29 +1245,10 @@
                 </span>
             </div>
             <?php endif; ?>
-
-            <?php if (isset($movie['credits']['crew'])):
-                    $directors = array_filter($movie['credits']['crew'], function ($c) {
-                        return $c['job'] === 'Director';
-                    });
-                    if (! empty($directors)):
-            ?>
-            <div class="cast-info" style="border-top: none; padding-top: 5px;">
-                <strong><i class="fas fa-video"></i> Director:</strong>
-                <span class="cast-names">
-                    <?php
-                        $directorNames = array_map(function ($d) {
-                            return '<span>' . htmlspecialchars($d['name']) . '</span>';
-                        }, array_slice($directors, 0, 2));
-                        echo implode(' ', $directorNames);
-                    ?>
-                </span>
-            </div>
-            <?php endif; endif; ?>
         </div>
     </div>
 
-    <!-- Recommendations Section with PLAY ICON -->
+    <!-- Recommendations Section -->
     <?php if (! empty($recommendations)): ?>
     <div class="recommendations-header">
         <h2><i class="fas fa-film" style="margin-right: 10px; color: var(--primary);"></i> You Might Also Like</h2>
@@ -1018,19 +1257,23 @@
     <div class="rec-grid">
         <?php foreach ($recommendations as $rec):
                 if (empty($rec['poster_path'])) continue;
+                
+                // Determine if recommendation is movie or TV show
+                $rec_type = isset($rec['title']) ? 'movie' : 'tv';
+                $rec_title = $rec_type === 'tv' ? $rec['name'] : $rec['title'];
+                $rec_id = $rec['id'];
         ?>
-            <div class="rec-card" onclick="location.href='play.php?id=<?php echo $rec['id']; ?>&server=1'">
+            <div class="rec-card" onclick="location.href='play.php?id=<?php echo $rec_id; ?>&type=<?php echo $rec_type; ?>&server=1'">
                 <div class="rec-poster">
                     <img src="https://image.tmdb.org/t/p/w342<?php echo $rec['poster_path']; ?>"
-                         alt="<?php echo htmlspecialchars($rec['title']); ?>"
+                         alt="<?php echo htmlspecialchars($rec_title); ?>"
                          loading="lazy">
-                    <!-- PLAY ICON OVERLAY -->
                     <div class="play-overlay">
                         <i class="fas fa-play-circle"></i>
                     </div>
                 </div>
                 <div class="rec-info">
-                    <p class="rec-title"><?php echo htmlspecialchars($rec['title']); ?></p>
+                    <p class="rec-title"><?php echo htmlspecialchars($rec_title); ?></p>
                     <span class="rec-rating">
                         <i class="fas fa-star"></i> <?php echo number_format($rec['vote_average'], 1); ?>
                     </span>
@@ -1042,6 +1285,23 @@
 </div>
 
 <script>
+// Get current type
+const contentType = '<?php echo $type; ?>';
+const contentId = <?php echo $movie_id; ?>;
+const currentSeason = <?php echo $season; ?>;
+const currentEpisode = <?php echo $episode; ?>;
+
+// Function to change episode (only for TV shows)
+function changeEpisode() {
+    if (contentType !== 'tv') return;
+    
+    const season = document.getElementById('seasonSelect').value;
+    const episode = document.getElementById('episodeSelect').value;
+    const currentServer = <?php echo $server; ?>;
+    
+    window.location.href = `play.php?id=${contentId}&type=tv&season=${season}&episode=${episode}&server=${currentServer}`;
+}
+
 // Server Switcher
 function switchServer(url, serverNum, btn) {
     const videoFrame = document.getElementById('video-frame');
@@ -1099,7 +1359,7 @@ document.getElementById('trailerModal').addEventListener('click', function(e) {
 });
 
 // Watchlist
-function toggleWatchlist(movieId) {
+function toggleWatchlist(contentId) {
     const btn = document.getElementById('watchlistBtn');
     const icon = btn.querySelector('i');
     const span = btn.querySelector('span');
@@ -1113,7 +1373,7 @@ function toggleWatchlist(movieId) {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify({ movie_id: movieId })
+        body: JSON.stringify({ movie_id: contentId })
     })
     .then(res => res.json())
     .then(data => {
@@ -1146,7 +1406,10 @@ document.addEventListener('DOMContentLoaded', () => {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         },
-        body: JSON.stringify({ movie_id: <?php echo $movie_id; ?> })
+        body: JSON.stringify({ 
+            movie_id: <?php echo $movie_id; ?>,
+            type: contentType
+        })
     }).catch(() => {});
     
     const serverParam = new URLSearchParams(window.location.search).get('server');
