@@ -1,34 +1,23 @@
 <?php
+// watchlist.php
 require_once('vendor/autoload.php');
-
-use GuzzleHttp\Client;
-
-$client = new Client();
-$watchlist_movies = [];
-$error_message = "";
-
-$current_page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
-if ($current_page < 1)
-    $current_page = 1;
-
-$token = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI2YjQxYTFjYzY0NzQyODc2ZWY2MmUxNzEwOGMxOGNjMyIsIm5iZiI6MTc3MTExNTQ1Ny42NTUsInN1YiI6IjY5OTExM2MxM2ZiNTkwYzNmNGZhMmMyOSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.pxULVqOJMZJeRx1nVfQ0ynS_ZgYvbV86Uanoi1FqjsI';
-
+require_once 'models/Watchlist.php';
 include 'layout/header.php';
 ?>
 
 <div class="main-layout">
     <aside class="sidebar">
         <div class="sidebar-header">
-            <h3 style="color: red;"><i class="fas fa-sliders-h"></i> My Watchlist</h3>
+            <h3 style="color: var(--primary-color);"><i class="fas fa-sliders-h"></i> My Watchlist</h3>
         </div>
 
         <div class="filter-section">
             <h4><i class="fas fa-filter"></i> Sort By</h4>
             <select class="sort-select" id="watchlistSort">
-                <option value="date-added">Date Added</option>
-                <option value="title">Title A-Z</option>
-                <option value="rating">Rating</option>
-                <option value="year">Year</option>
+                <option value="date-added">Date Added (Newest)</option>
+                <option value="title">Title (A-Z)</option>
+                <option value="rating">Rating (Highest)</option>
+                <option value="year">Year (Newest)</option>
             </select>
         </div>
 
@@ -44,52 +33,48 @@ include 'layout/header.php';
 
         <div class="filter-section">
             <h4><i class="fas fa-trash"></i> Actions</h4>
-            <button class="clear-filters-btn" id="clearWatchlist" style="margin-top: 0;">
+            <button class="clear-filters-btn" id="clearWatchlist">
                 <i class="fas fa-trash-alt"></i> Clear All
             </button>
         </div>
 
-        <div class="watchlist-stats" id="watchlistStats">
-            <p>Total Movies: <span id="totalCount">0</span></p>
-            <p>Current Page: <span id="currentPage">1</span> of <span id="totalPages">1</span></p>
+        <div class="watchlist-stats" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+            <p style="display: flex; justify-content: space-between;">
+                <span>Total Movies:</span>
+                <span id="totalCount" style="color: var(--primary-color); font-weight: bold;">0</span>
+            </p>
+            <p style="display: flex; justify-content: space-between; font-size: 0.85rem; color: #888;">
+                <span>Page:</span>
+                <span><span id="currentPage">1</span> of <span id="totalPages">1</span></span>
+            </p>
         </div>
     </aside>
 
     <main class="main-content">
         <div class="results-header">
             <h1 class="section-title">
-                <i class="fas fa-bookmark"></i> My Watchlist
+                <i class="fas fa-bookmark" style="margin-right: 10px;"></i> My Watchlist
             </h1>
             <span class="results-count" id="watchlistCount">0 movies</span>
         </div>
 
-        <?php if ($error_message): ?>
-            <div class="error-msg"><?php echo htmlspecialchars($error_message); ?></div>
-        <?php endif; ?>
-
-        <!-- Skeleton Loader -->
-        <div class="skeleton-grid" id="skeletonLoader" style="display: none;">
-            <?php for ($i = 0; $i < 12; $i++): ?>
-                <div class="skeleton-card">
-                    <div class="skeleton-poster"></div>
-                    <div class="skeleton-footer">
-                        <div class="skeleton-rating"></div>
-                        <div class="skeleton-title"></div>
-                        <div class="skeleton-meta"></div>
-                    </div>
-                </div>
-            <?php endfor; ?>
+        <!-- Loading Spinner -->
+        <div id="watchlistLoading" style="display: none; text-align: center; padding: 50px;">
+            <div class="spinner" style="margin: 0 auto;"></div>
+            <p style="color: #888; margin-top: 15px;">Loading your watchlist...</p>
         </div>
 
+        <!-- Empty Watchlist -->
         <div class="empty-watchlist" id="emptyWatchlist" style="display: none;">
             <i class="fas fa-bookmark"></i>
             <h3>Your watchlist is empty</h3>
-            <p>Start adding movies by clicking the heart icon on any movie!</p>
-            <a href="index.php" class="btn-play" style="display: inline-block; margin-top: 20px;">
+            <p>Start adding movies to see them here!</p>
+            <a href="index.php" class="clear-filters-btn" style="display: inline-block; width: auto; padding: 10px 30px; margin-top: 20px; text-decoration: none;">
                 <i class="fas fa-film"></i> Browse Movies
             </a>
         </div>
 
+        <!-- Watchlist Grid -->
         <div class="movie-grid" id="watchlistGrid"></div>
 
         <!-- Pagination -->
@@ -97,45 +82,41 @@ include 'layout/header.php';
             <button class="page-link prev" id="prevPage" disabled>
                 <i class="fas fa-chevron-left"></i> Previous
             </button>
-
             <div class="page-numbers" id="pageNumbers"></div>
-
-            <button class="page-link next" id="nextPage">
+            <button class="page-link next" id="nextPage" disabled>
                 Next <i class="fas fa-chevron-right"></i>
             </button>
-        </div>
-
-        <div class="modal-overlay" id="confirmModal" style="display: none;">
-            <div class="modal-container" style="max-width: 400px;">
-                <div class="modal-header">
-                    <h2 class="modal-title">Clear Watchlist</h2>
-                    <button class="modal-close" id="closeConfirmModal">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div class="modal-body" style="text-align: center;">
-                    <i class="fas fa-exclamation-triangle"
-                        style="font-size: 3rem; color: #e50914; margin-bottom: 15px;"></i>
-                    <p style="color: #fff; font-size: 1.1rem;">Are you sure you want to remove all movies from your
-                        watchlist?</p>
-                </div>
-                <div class="modal-footer" style="justify-content: center;">
-                    <button class="btn-more" id="cancelClear">Cancel</button>
-                    <button class="btn-play-modal" id="confirmClear">Yes, Clear All</button>
-                </div>
-            </div>
         </div>
     </main>
 </div>
 
+<!-- Confirmation Modal -->
+<div class="modal-overlay" id="confirmModal" style="display: none;">
+    <div class="modal-container" style="max-width: 400px;">
+        <div class="modal-body" style="text-align: center; padding: 30px;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 3rem; color: var(--primary-color); margin-bottom: 15px;"></i>
+            <h3 style="margin-bottom: 10px; color: #fff;">Clear Watchlist?</h3>
+            <p style="color: var(--text-dim); margin-bottom: 25px;">Are you sure you want to remove all movies from your watchlist? This action cannot be undone.</p>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button id="cancelClear" class="clear-filters-btn" style="width: auto; padding: 10px 25px; margin: 0; background: transparent;">
+                    Cancel
+                </button>
+                <button id="confirmClear" style="padding: 10px 25px; background: var(--primary-color); color: white; border: none; border-radius: var(--border-radius-md); cursor: pointer; font-weight: bold;">
+                    Yes, Clear All
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Watchlist Card Template -->
 <template id="watchlistCardTemplate">
-    <div class="movie-card" data-id="">
+    <div class="movie-card">
         <div class="card-poster">
-            <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='500' height='750' viewBox='0 0 500 750'%3E%3Crect width='500' height='750' fill='%23333'/%3E%3C/svg%3E"
-                data-src="" alt="" class="lazy-image watchlist-poster">
+            <img src="" alt="" class="watchlist-poster" loading="lazy">
             <div class="card-overlay">
                 <button class="play-icon" title="Play"><i class="fas fa-play"></i></button>
-                <button class="like-icon active" title="Remove from list"><i class="fas fa-heart"></i></button>
+                <button class="like-icon" title="Remove from list"><i class="fas fa-heart" style="color: var(--primary-color);"></i></button>
                 <button class="info-icon" title="More info"><i class="fas fa-info-circle"></i></button>
             </div>
         </div>
@@ -147,16 +128,12 @@ include 'layout/header.php';
             <p class="movie-title"></p>
             <div class="movie-meta">
                 <span class="release-year"></span>
-                <span class="maturity-rating"></span>
                 <span class="added-date"></span>
             </div>
         </div>
     </div>
 </template>
 
-<div id="loadingSpinner" class="loading-spinner" style="display: none;">
-    <div class="spinner"></div>
-</div>
+<script src="js/script.js"></script>
 
-<script src="js/watchlist.js"></script>
 <?php include 'layout/footer.php'; ?>
