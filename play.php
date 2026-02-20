@@ -298,78 +298,168 @@
         border: none;
     }
 
-    /* Episode Selector - Only visible for TV shows */
+    /* Episode Selector - SEASON DROPDOWN ONLY, EPISODE LIST HORIZONTAL */
     .episode-selector {
-        background: #1a1a1a;
-        padding: 15px 20px;
-        display: <?php echo $type === 'tv' ? 'flex' : 'none'; ?>;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 20px;
-        border-top: 1px solid var(--border-color);
+        background: linear-gradient(145deg, #1a1a1a, #151515);
+        padding: 20px 25px;
+        display: <?php echo $type === 'tv' ? 'block' : 'none'; ?>;
+        border-top: 2px solid var(--primary);
         border-bottom: 1px solid var(--border-color);
     }
 
-    .episode-label {
+    .episode-header {
         display: flex;
         align-items: center;
-        gap: 8px;
-        color: var(--text-dim);
-        font-size: 0.85rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-bottom: 20px;
     }
 
-    .episode-label i {
+    .episode-title {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .episode-icon {
+        width: 45px;
+        height: 45px;
+        background: rgba(229, 9, 20, 0.15);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--primary);
+    }
+
+    .episode-icon i {
+        color: var(--primary);
+        font-size: 1.3rem;
+    }
+
+    .episode-text h4 {
+        color: white;
+        font-size: 1rem;
+        margin: 0 0 5px 0;
+        font-weight: 600;
+    }
+
+    .episode-text p {
+        color: var(--text-dim);
+        font-size: 0.85rem;
+        margin: 0;
+    }
+
+    .season-selector {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        background: #252525;
+        padding: 10px 20px;
+        border-radius: 40px;
+        border: 1px solid var(--border-color);
+    }
+
+    .season-selector label {
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .season-dropdown {
+        background: #2a2a2a;
+        border: 1px solid #444;
+        color: var(--text-main);
+        padding: 8px 20px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 0.95rem;
+        outline: none;
+        min-width: 180px;
+    }
+
+    .season-dropdown:hover {
+        border-color: var(--primary);
+    }
+
+    /* Episode List - HORIZONTAL SCROLL */
+    .episode-list {
+        margin-top: 20px;
+    }
+
+    .episode-list-label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .episode-list-label i {
         color: var(--primary);
         font-size: 1rem;
     }
 
-    .episode-controls {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        flex-wrap: wrap;
+    .episode-list-label span {
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
 
-    .episode-select {
+    .episode-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        max-height: 120px;
+        overflow-y: auto;
+        padding: 5px;
+        background: #1f1f1f;
+        border-radius: 12px;
+        border: 1px solid var(--border-color);
+    }
+
+    .episode-item {
+        min-width: 60px;
+        height: 60px;
         background: #2a2a2a;
         border: 1px solid #444;
-        color: var(--text-main);
-        padding: 8px 15px;
-        border-radius: 25px;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
         cursor: pointer;
-        font-size: 0.9rem;
-        outline: none;
-        min-width: 150px;
+        transition: all 0.2s ease;
+        padding: 5px;
     }
 
-    .episode-select:hover {
+    .episode-item:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        background: #333;
+    }
+
+    .episode-item.active {
+        background: var(--primary);
         border-color: var(--primary);
     }
 
-    .episode-btn {
-        background: var(--primary);
-        border: none;
-        color: white;
-        padding: 8px 20px;
-        border-radius: 25px;
-        cursor: pointer;
+    .episode-number {
+        font-size: 1rem;
         font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        transition: all 0.2s ease;
+        color: white;
     }
 
-    .episode-btn:hover {
-        background: var(--primary-dark);
-        transform: scale(1.02);
+    .episode-label {
+        font-size: 0.7rem;
+        color: var(--text-dim);
+        text-transform: uppercase;
     }
 
-    .episode-btn i {
-        font-size: 0.85rem;
+    .episode-item.active .episode-label {
+        color: rgba(255,255,255,0.8);
     }
 
     /* Server Controls */
@@ -380,7 +470,6 @@
         align-items: center;
         flex-wrap: wrap;
         gap: 20px;
-        border-top: 1px solid var(--border-color);
         border-bottom: 1px solid var(--border-color);
     }
 
@@ -944,12 +1033,21 @@
             font-size: 1.5rem;
         }
         
-        .episode-controls {
+        .episode-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .season-selector {
             width: 100%;
         }
         
-        .episode-select {
+        .season-dropdown {
             flex: 1;
+        }
+        
+        .episode-grid {
+            max-height: 200px;
         }
     }
 
@@ -1007,22 +1105,13 @@
             padding: 10px 15px;
         }
         
-        .episode-selector {
-            flex-direction: column;
-            align-items: flex-start;
+        .episode-item {
+            min-width: 50px;
+            height: 50px;
         }
         
-        .episode-controls {
-            flex-direction: column;
-        }
-        
-        .episode-select {
-            width: 100%;
-        }
-        
-        .episode-btn {
-            width: 100%;
-            justify-content: center;
+        .episode-number {
+            font-size: 0.9rem;
         }
     }
 
@@ -1098,7 +1187,7 @@
 </div>
 
 <div class="play-page-container">
-    <!-- Search Bar - FIXED: Now redirects to the correct page -->
+    <!-- Search Bar -->
     <div class="search-section">
         <form action="<?php echo $type === 'tv' ? 'tvshow.php' : 'movie.php'; ?>" method="GET" class="search-form">
             <i class="fas fa-search"></i>
@@ -1122,34 +1211,57 @@
                     loading="lazy"></iframe>
         </div>
 
-        <!-- Episode Selector - Only for TV shows -->
+        <!-- Episode Selector - SEASON DROPDOWN ONLY, EPISODE LIST HORIZONTAL -->
         <?php if ($type === 'tv'): ?>
         <div class="episode-selector">
-            <div class="episode-label">
-                <i class="fas fa-list"></i>
-                <span>EPISODE:</span>
+            <div class="episode-header">
+                <div class="episode-title">
+                    <div class="episode-icon">
+                        <i class="fas fa-list"></i>
+                    </div>
+                    <div class="episode-text">
+                        <h4>Episode Selector</h4>
+                        <p>Select season and episode to watch</p>
+                    </div>
+                </div>
+                
+                <div class="season-selector">
+                    <label for="seasonSelect">Season:</label>
+                    <select id="seasonSelect" class="season-dropdown">
+                        <?php foreach ($seasons as $s): 
+                            if ($s['season_number'] > 0): ?>
+                            <option value="<?php echo $s['season_number']; ?>" <?php echo $season == $s['season_number'] ? 'selected' : ''; ?>>
+                                Season <?php echo $s['season_number']; ?> (<?php echo $s['episode_count']; ?> eps)
+                            </option>
+                        <?php endif; endforeach; ?>
+                    </select>
+                </div>
             </div>
-            <div class="episode-controls">
-                <select id="seasonSelect" class="episode-select">
-                    <?php foreach ($seasons as $s): 
-                        if ($s['season_number'] > 0): ?>
-                        <option value="<?php echo $s['season_number']; ?>" <?php echo $season == $s['season_number'] ? 'selected' : ''; ?>>
-                            Season <?php echo $s['season_number']; ?> (<?php echo $s['episode_count']; ?> eps)
-                        </option>
-                    <?php endif; endforeach; ?>
-                </select>
-                
-                <select id="episodeSelect" class="episode-select">
-                    <?php for ($e = 1; $e <= 20; $e++): ?>
-                        <option value="<?php echo $e; ?>" <?php echo $episode == $e ? 'selected' : ''; ?>>
-                            Episode <?php echo $e; ?>
-                        </option>
+            
+            <div class="episode-list">
+                <div class="episode-list-label">
+                    <i class="fas fa-film"></i>
+                    <span>Episodes</span>
+                </div>
+                <div class="episode-grid" id="episodeGrid">
+                    <?php 
+                    // Get the maximum episode number from the selected season
+                    $max_episodes = 20; // Default
+                    foreach ($seasons as $s) {
+                        if ($s['season_number'] == $season && isset($s['episode_count'])) {
+                            $max_episodes = $s['episode_count'];
+                            break;
+                        }
+                    }
+                    for ($e = 1; $e <= $max_episodes; $e++): 
+                    ?>
+                        <div class="episode-item <?php echo $episode == $e ? 'active' : ''; ?>" 
+                             onclick="changeEpisodeDirect(<?php echo $e; ?>)">
+                            <span class="episode-number"><?php echo $e; ?></span>
+                            <span class="episode-label">EP</span>
+                        </div>
                     <?php endfor; ?>
-                </select>
-                
-                <button class="episode-btn" onclick="changeEpisode()">
-                    <i class="fas fa-play"></i> Go to Episode
-                </button>
+                </div>
             </div>
         </div>
         <?php endif; ?>
@@ -1291,16 +1403,29 @@ const contentId = <?php echo $movie_id; ?>;
 const currentSeason = <?php echo $season; ?>;
 const currentEpisode = <?php echo $episode; ?>;
 
-// Function to change episode (only for TV shows)
-function changeEpisode() {
+// Function to change episode directly (called when clicking episode box)
+function changeEpisodeDirect(episodeNum) {
     if (contentType !== 'tv') return;
     
     const season = document.getElementById('seasonSelect').value;
-    const episode = document.getElementById('episodeSelect').value;
     const currentServer = <?php echo $server; ?>;
     
-    window.location.href = `play.php?id=${contentId}&type=tv&season=${season}&episode=${episode}&server=${currentServer}`;
+    window.location.href = `play.php?id=${contentId}&type=tv&season=${season}&episode=${episodeNum}&server=${currentServer}`;
 }
+
+// Update episode grid when season changes
+document.addEventListener('DOMContentLoaded', function() {
+    const seasonSelect = document.getElementById('seasonSelect');
+    if (seasonSelect) {
+        seasonSelect.addEventListener('change', function() {
+            const season = this.value;
+            const currentServer = <?php echo $server; ?>;
+            
+            // Just go to episode 1 of the new season
+            window.location.href = `play.php?id=${contentId}&type=tv&season=${season}&episode=1&server=${currentServer}`;
+        });
+    }
+});
 
 // Server Switcher
 function switchServer(url, serverNum, btn) {

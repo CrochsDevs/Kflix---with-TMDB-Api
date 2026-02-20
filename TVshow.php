@@ -204,7 +204,6 @@ include 'layout/header.php';
                              loading="lazy"
                              onerror="this.src='https://via.placeholder.com/500x750?text=No+Image'">
                         <div class="card-overlay">
-                            <!-- UPDATED: Added type=tv parameter -->
                             <button class="play-icon" title="Play" onclick="window.location.href='play.php?id=<?php echo $show['id']; ?>&type=tv&season=1&episode=1'">
                                 <i class="fas fa-play"></i>
                             </button>

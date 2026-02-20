@@ -41,7 +41,7 @@ try {
             if (!$data || !isset($data['id'])) {
                 echo json_encode([
                     'success' => false, 
-                    'message' => 'Invalid movie data',
+                    'message' => 'Invalid data: missing ID',
                     'received' => $data
                 ]);
                 break;

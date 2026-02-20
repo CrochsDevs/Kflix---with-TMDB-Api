@@ -108,7 +108,7 @@
                 <a href="index.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">Home</a>
                 <a href="tvshow.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'tvshow.php' ? 'active' : ''; ?>">TV Shows</a>
                 <a href="movie.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'movie.php' ? 'active' : ''; ?>">Movies</a>
-                <a href="#">New & Popular</a>
+                <a href="newpopular.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'newpopular.php' ? 'active' : ''; ?>">New & Popular</a>
                 <a href="watchlist.php" id="myListLink" class="<?php echo basename($_SERVER['PHP_SELF']) == 'watchlist.php' ? 'active' : ''; ?>">My List</a>
             </div>
         </div>
