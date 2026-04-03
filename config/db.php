@@ -2,11 +2,18 @@
 // config/db.php
 // Use environment variables for database credentials with Docker-friendly defaults
 class Database {
-    private $host = getenv('DB_HOST') ?: 'db';
-    private $db_name = getenv('DB_DATABASE') ?: 'kflix_db';
-    private $username = getenv('DB_USERNAME') ?: 'kflix_user';
-    private $password = getenv('DB_PASSWORD') ?: 'kflix_password';
+    private $host;
+    private $db_name;
+    private $username;
+    private $password;
     private $conn;
+
+    public function __construct() {
+        $this->host = getenv('DB_HOST') ?: 'db';
+        $this->db_name = getenv('DB_DATABASE') ?: 'kflix_db';
+        $this->username = getenv('DB_USERNAME') ?: 'kflix_user';
+        $this->password = getenv('DB_PASSWORD') ?: 'kflix_password';
+    }
 
     public function getConnection() {
         $this->conn = null;
