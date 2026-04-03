@@ -1474,8 +1474,12 @@ function closeTrailer() {
 
 // Close modal with Escape key
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeTrailer();
-    if (e.key === 'f' || e.key === 'F') toggleFullScreen();
+    const tag = (e.target.tagName || '').toLowerCase();
+    const isInput = tag === 'input' || tag === 'textarea' || e.target.isContentEditable;
+    if (!isInput) {
+        if (e.key === 'Escape') closeTrailer();
+        if (e.key === 'f' || e.key === 'F') toggleFullScreen();
+    }
 });
 
 // Close modal when clicking outside
