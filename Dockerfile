@@ -1,23 +1,26 @@
+# Stage 1: Install PHP dependencies using composer image (has git, unzip built-in)
+FROM composer:2 AS vendor
+
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-plugins --no-scripts
+
+# Stage 2: Runtime with Apache
 FROM php:8.2-apache
 
 # Enable Apache mod_rewrite
-RUN a2enmod rewrite
-
-# Install pdo_mysql using pre-installed libraries
-RUN docker-php-ext-install pdo pdo_mysql
+RUN a2enmod rewrite && \
+    docker-php-ext-install pdo pdo_mysql
 
 WORKDIR /var/www/html
 
-# Install composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Copy composer-installed vendor from stage 1
+COPY --from=vendor /app/vendor ./vendor
 
-# Copy app files
+# Copy application files
 COPY . ./
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# Create cache dir and set permissions
+# Set permissions
 RUN mkdir -p cache && chown -R www-data:www-data .
 
 EXPOSE 80
