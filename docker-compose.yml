@@ -6,6 +6,8 @@ services:
     container_name: kflix-web
     ports:
       - "8181:80"
+    volumes:
+      - ./:/var/www/html
     environment:
       - DB_HOST=db
       - DB_DATABASE=kflix_db
@@ -15,8 +17,6 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
-    volumes:
-      - ./cache:/var/www/html/cache
 
   db:
     image: mysql:8.0
