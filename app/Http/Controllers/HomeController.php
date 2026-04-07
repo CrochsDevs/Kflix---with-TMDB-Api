@@ -36,7 +36,15 @@ class HomeController extends Controller
             $totalResults = $data['total_results'] ?? 0;
             $genres = $this->tmdb->getGenres('movie');
 
-            return view('movies.index', compact('movies', 'totalPages', 'totalResults', 'genres', 'search', 'genre', 'filter', 'sortBy', 'page'));
+            // Resolve genre name for display
+            $genreName = '';
+            if ($genre > 0) {
+                foreach ($genres as $g) {
+                    if ($g['id'] == $genre) { $genreName = $g['name']; break; }
+                }
+            }
+
+            return view('movies.index', compact('movies', 'totalPages', 'totalResults', 'genres', 'genreName', 'search', 'genre', 'filter', 'sortBy', 'page'));
         } catch (\Exception $e) {
             return view('movies.index', [
                 'movies' => [], 'totalPages' => 1, 'totalResults' => 0,

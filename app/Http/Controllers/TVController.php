@@ -23,23 +23,23 @@ class TVController extends Controller
             $sortBy = $request->get('sort', 'popularity.desc');
             $page = max(1, (int) $request->get('page', 1));
 
-            if (!empty($search)) {
-                $data = $this->tmdb->searchTV($search, $page, $genre, $sortBy);
-            } elseif ($genre > 0) {
-                $data = $this->tmdb->searchTV('', $page, $genre, $sortBy);
-            } else {
-                $data = $this->tmdb->getTrendingTV($filter, $page);
-            }
+            $data = $search || $genre > 0
+                ? $this->tmdb->searchTV($search, $page, $genre, $sortBy)
+                : $this->tmdb->getTrendingTV($filter, $page);
 
             $tvshows = $data['results'] ?? [];
             $totalPages = min($data['total_pages'] ?? 1, 500);
-            $totalResults = $data['total_results'] ?? 0;
             $genres = $this->tmdb->getGenres('tv');
 
-            return view('tv.index', compact('tvshows', 'totalPages', 'totalResults', 'genres', 'search', 'genre', 'filter', 'sortBy', 'page'));
+            $genreName = '';
+            if ($genre > 0) {
+                foreach ($genres as $g) { if ($g['id'] == $genre) { $genreName = $g['name']; break; } }
+            }
+
+            return view('tv.index', compact('tvshows', 'totalPages', 'genres', 'genreName', 'search', 'genre', 'filter', 'sortBy', 'page'));
         } catch (\Exception $e) {
             return view('tv.index', [
-                'tvshows' => [], 'totalPages' => 1, 'totalResults' => 0,
+                'tvshows' => [], 'totalPages' => 1,
                 'genres' => [], 'search' => '', 'genre' => 0,
                 'filter' => 'day', 'sortBy' => 'popularity.desc', 'page' => 1,
                 'error' => $e->getMessage(),
@@ -61,12 +61,11 @@ class TVController extends Controller
             $data = $this->tmdb->getNewPopularTV($sortBy, $page);
             $tvshows = $data['results'] ?? [];
             $totalPages = min($data['total_pages'] ?? 1, 500);
-            $totalResults = $data['total_results'] ?? 0;
             $genres = $this->tmdb->getGenres('tv');
-            return view('tv.newpopular', compact('tvshows', 'totalPages', 'totalResults', 'genres', 'page', 'sortBy'));
+            return view('tv.newpopular', compact('tvshows', 'totalPages', 'genres', 'page', 'sortBy'));
         } catch (\Exception $e) {
             return view('tv.newpopular', [
-                'tvshows' => [], 'totalPages' => 1, 'totalResults' => 0,
+                'tvshows' => [], 'totalPages' => 1,
                 'genres' => [], 'page' => 1, 'sortBy' => 'popularity.desc',
                 'error' => $e->getMessage(),
             ]);
