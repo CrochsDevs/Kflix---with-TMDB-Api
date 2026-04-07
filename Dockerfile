@@ -22,14 +22,21 @@ WORKDIR /var/www/html
 COPY composer.json .
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
 
-# Copy app
+# Copy all app files
 COPY . .
 
-# Laravel bootstrap dirs
-RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs \
-    bootstrap/cache public && \
+# Create proper Laravel directories and set permissions
+RUN mkdir -p storage/framework/cache && \
+    mkdir -p storage/framework/sessions && \
+    mkdir -p storage/framework/views && \
+    mkdir -p storage/logs && \
+    mkdir -p bootstrap/cache && \
     touch .env && \
-    chown -R www-data:www-data storage bootstrap public .env && \
-    chmod -R 775 storage bootstrap
+    chmod -R 775 storage && \
+    chmod -R 775 bootstrap && \
+    chown -R www-data:www-data storage && \
+    chown -R www-data:www-data bootstrap && \
+    chown -R www-data:www-data public && \
+    chown www-data:www-data .env
 
 EXPOSE 80
