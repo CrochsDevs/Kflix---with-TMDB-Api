@@ -166,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check if movie is in watchlist
             let inWatchlist = false;
             try {
-                const checkResponse = await fetch(`api/watchlist.php?movie_id=${movieId}`, {
+                const checkResponse = await fetch(`/api/watchlist?movie_id=${movieId}`, {
                     method: 'PUT'
                 });
                 const checkData = await checkResponse.json();
@@ -351,7 +351,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading();
 
         try {
-            const response = await fetch('api/watchlist.php');
+            const response = await fetch('/api/watchlist');
             const data = await response.json();
             
             console.log('📌 API Response:', data);
@@ -493,7 +493,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading();
         
         try {
-            const response = await fetch('api/watchlist.php', {
+            const response = await fetch('/api/watchlist', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json'
@@ -566,7 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading();
         
         try {
-            const response = await fetch(`api/watchlist.php?movie_id=${movieId}`, {
+            const response = await fetch(`/api/watchlist?movie_id=${movieId}`, {
                 method: 'DELETE'
             });
             const data = await response.json();
@@ -604,7 +604,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // If on watchlist page, reload
-                if (window.location.pathname.includes('watchlist.php')) {
+                if (window.location.pathname.includes('/watchlist')) {
                     loadWatchlist();
                 }
                 
@@ -630,7 +630,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!movieId) return;
         
         try {
-            const response = await fetch(`api/watchlist.php?movie_id=${movieId}`, {
+            const response = await fetch(`/api/watchlist?movie_id=${movieId}`, {
                 method: 'PUT'
             });
             const data = await response.json();
@@ -653,7 +653,7 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     async function fetchWatchlistCount() {
         try {
-            const response = await fetch('api/watchlist.php');
+            const response = await fetch('/api/watchlist');
             const data = await response.json();
             
             if (data.success) {
@@ -686,7 +686,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showLoading();
         
         try {
-            const response = await fetch('api/watchlist.php', {
+            const response = await fetch('/api/watchlist', {
                 method: 'DELETE'
             });
             const data = await response.json();
@@ -715,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 
                 // Reload watchlist
-                if (window.location.pathname.includes('watchlist.php')) {
+                if (window.location.pathname.includes('/watchlist')) {
                     loadWatchlist();
                 }
             }
@@ -731,7 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==================== PAGE DETECTION ====================
 
     // Check if we're on watchlist page
-    if (window.location.pathname.includes('watchlist.php')) {
+    if (window.location.pathname.includes('/watchlist')) {
         console.log('📌 WATCHLIST PAGE DETECTED');
         
         setTimeout(() => {
@@ -784,7 +784,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==================== MAIN PAGE ====================
     // PLAY BUTTON LANG ANG MAGBUBUKAS NG PLAY PAGE
 
-    if (movieGrid && !window.location.pathname.includes('watchlist.php')) {
+    if (movieGrid && !window.location.pathname.includes('/watchlist')) {
         console.log('📌 MAIN PAGE DETECTED');
         
         fetchWatchlistCount();
@@ -925,7 +925,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ==================== SORT ====================
 
-    if (sortSelect && !window.location.pathname.includes('watchlist.php')) {
+    if (sortSelect && !window.location.pathname.includes('/watchlist')) {
         sortSelect.addEventListener('change', function() {
             const url = new URL(window.location.href);
             url.searchParams.set('sort', this.value);
