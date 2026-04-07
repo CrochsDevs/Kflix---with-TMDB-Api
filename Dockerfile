@@ -13,6 +13,12 @@ ENV APACHE_DOCUMENT_ROOT /var/www/html/public
 RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
 RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
 
+# Enable AllowOverride for RewriteRule to work
+RUN sed -ri -e 's!AllowOverride\s+None!AllowOverride All!g' /etc/apache2/apache2.conf
+
+# Set ServerName to suppress AH00558 warning
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
 # Install composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
@@ -31,7 +37,8 @@ RUN mkdir -p storage/framework/cache && \
     mkdir -p storage/framework/views && \
     mkdir -p storage/logs && \
     mkdir -p bootstrap/cache && \
-    printf 'APP_NAME=KFLIX\nAPP_ENV=production\nAPP_KEY=base64:e9446fc20b1ede0433ee461263a41c9b0046bd30e75e263e5dcc6fcace68025e\nAPP_DEBUG=false\nAPP_URL=http://localhost\nDB_CONNECTION=mysql\nDB_HOST=db\nDB_DATABASE=kflix_db\nDB_USERNAME=kflix_user\nDB_PASSWORD=kflix_password\nCACHE_DRIVER=file\nSESSION_DRIVER=file\nQUEUE_CONNECTION=sync\n' > .env && \
+    mkdir -p public && \
+    printf 'APP_NAME=KFLIX\nAPP_ENV=production\nAPP_KEY=base64:9JtWXX9fyk2lk59ichWBCKRLmrXKCHV+b+UYes5oP0c=\nAPP_DEBUG=true\nAPP_URL=http://localhost\nDB_CONNECTION=mysql\nDB_HOST=db\nDB_DATABASE=kflix_db\nDB_USERNAME=kflix_user\nDB_PASSWORD=kflix_password\nCACHE_DRIVER=file\nSESSION_DRIVER=file\nQUEUE_CONNECTION=sync\n' > .env && \
     chmod -R 775 storage && \
     chmod -R 775 bootstrap && \
     chown -R www-data:www-data storage && \
