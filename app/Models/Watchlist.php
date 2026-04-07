@@ -50,9 +50,11 @@ class Watchlist
                 ->where('user_id', $this->user_id)
                 ->count();
 
+            $col = array_key_first($orderBy);
+            $dir = $orderBy[$col];
             $items = DB::table($this->table)
                 ->where('user_id', $this->user_id)
-                ->orderBy(...array_first(array_keys($orderBy)), reset($orderBy))
+                ->orderBy($col, $dir)
                 ->skip(($page - 1) * $itemsPerPage)
                 ->take($itemsPerPage)
                 ->get()
