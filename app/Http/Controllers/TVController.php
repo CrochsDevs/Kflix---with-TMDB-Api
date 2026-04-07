@@ -56,17 +56,32 @@ class TVController extends Controller
     public function newPopular(Request $request)
     {
         try {
-            $page = max(1, (int) $request->get('page', 1));
+            $search = trim($request->get('search', ''));
+            $genre = (int) $request->get('genre', 0);
             $sortBy = $request->get('sort', 'popularity.desc');
-            $data = $this->tmdb->getNewPopularTV($sortBy, $page);
+            $page = max(1, (int) $request->get('page', 1));
+
+            if ($search || $genre > 0) {
+                $data = $this->tmdb->searchTV($search, $page, $genre, $sortBy);
+            } else {
+                $data = $this->tmdb->getNewPopularTV($sortBy, $page);
+            }
+
             $tvshows = $data['results'] ?? [];
             $totalPages = min($data['total_pages'] ?? 1, 500);
             $genres = $this->tmdb->getGenres('tv');
-            return view('tv.newpopular', compact('tvshows', 'totalPages', 'genres', 'page', 'sortBy'));
+
+            $genreName = '';
+            if ($genre > 0) {
+                foreach ($genres as $g) { if ($g['id'] == $genre) { $genreName = $g['name']; break; } }
+            }
+
+            return view('tv.newpopular', compact('tvshows', 'totalPages', 'genres', 'genreName', 'search', 'genre', 'sortBy', 'page'));
         } catch (\Exception $e) {
             return view('tv.newpopular', [
                 'tvshows' => [], 'totalPages' => 1,
-                'genres' => [], 'page' => 1, 'sortBy' => 'popularity.desc',
+                'genres' => [], 'genreName' => '', 'search' => '', 'genre' => 0,
+                'sortBy' => 'popularity.desc', 'page' => 1,
                 'error' => $e->getMessage(),
             ]);
         }
