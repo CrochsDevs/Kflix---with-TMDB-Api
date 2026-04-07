@@ -8,7 +8,13 @@ use App\Http\Controllers\TVController;
 use App\Http\Controllers\WatchlistController;
 use App\Http\Controllers\Api\WatchlistApiController;
 
-// Main pages
+// ==================== LEGACY PHP FILE REDIRECTS ====================
+Route::get('/play.php', fn() => redirect('/watch?' . request()->getQueryString()));
+Route::get('/index.php', fn() => redirect('/?' . request()->getQueryString()));
+Route::get('/tvshow.php', fn() => redirect('/tv?' . request()->getQueryString()));
+Route::get('/watchlist.php', fn() => redirect('/watchlist?' . request()->getQueryString()));
+
+// ==================== MAIN ROUTES ====================
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/movies', [HomeController::class, 'movies'])->name('movies');
 Route::get('/tv', [TVController::class, 'index'])->name('tv');
