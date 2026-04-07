@@ -10,14 +10,25 @@ RUN apt-get update && apt-get install -y git unzip && \
 
 # Set document root to public/
 ENV APACHE_DOCUMENT_ROOT /var/www/html/public
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-
-# Enable AllowOverride for RewriteRule to work
-RUN sed -ri -e 's!AllowOverride\s+None!AllowOverride All!g' /etc/apache2/apache2.conf
 
 # Set ServerName to suppress AH00558 warning
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
+# Write Apache VirtualHost config with rewrites (NO .htaccess needed)
+# This avoids the infinite redirect loop from having rewrites in both vhost AND .htaccess
+RUN printf '%s\n' \
+    '<VirtualHost *:80>' \
+    '    DocumentRoot /var/www/html/public' \
+    '    <Directory /var/www/html/public>' \
+    '        AllowOverride None' \
+    '        Require all granted' \
+    '        RewriteEngine On' \
+    '        RewriteCond %{REQUEST_FILENAME} !-d' \
+    '        RewriteCond %{REQUEST_FILENAME} !-f' \
+    '        RewriteRule ^ /index.php [L]' \
+    '    </Directory>' \
+    '</VirtualHost>' \
+    > /etc/apache2/sites-available/000-default.conf
 
 # Install composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
