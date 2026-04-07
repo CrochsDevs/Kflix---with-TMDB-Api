@@ -10,7 +10,7 @@ services:
     environment:
       - APP_NAME=KFLIX
       - APP_ENV=production
-      - APP_KEY=base64:e9446fc20b1ede0433ee461263a41c9b0046bd30e75e263e5dcc6fcace68025e
+      - APP_KEY=base64:jgoD/0lmQZ5jwRHsK/6S4VBLos0oxRujVJHufF8Zfgw=
       - APP_DEBUG=false
       - APP_URL=http://localhost:8181
       - DB_HOST=db
