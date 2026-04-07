@@ -23,14 +23,16 @@ class Watchlist
     public function getWatchlist(): array
     {
         try {
-            return DB::table($this->table)
+            $rows = DB::table($this->table)
                 ->where('user_id', $this->user_id)
                 ->orderBy('added_date', 'desc')
-                ->get()
-                ->map(function ($item) {
-                    return (array) $item;
-                })
-                ->toArray();
+                ->get();
+
+            $items = [];
+            foreach ($rows as $row) {
+                $items[] = (array) $row;
+            }
+            return $items;
         } catch (\Exception $e) {
             return [];
         }
