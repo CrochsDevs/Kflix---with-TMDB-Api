@@ -26,8 +26,10 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-script
 COPY . .
 
 # Laravel bootstrap dirs
-RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs && \
-    chown -R www-data:www-data storage bootstrap/cache public .env && \
-    chmod -R 775 storage bootstrap/cache
+RUN mkdir -p storage/framework/{cache,sessions,views} storage/logs \
+    bootstrap/cache public && \
+    touch .env && \
+    chown -R www-data:www-data storage bootstrap public .env && \
+    chmod -R 775 storage bootstrap
 
 EXPOSE 80
